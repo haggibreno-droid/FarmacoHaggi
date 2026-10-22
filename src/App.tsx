@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight, CircleHelp, Droplets, FlaskConical, HeartPulse, RotateCw, Sparkles, Waves } from 'lucide-react'
 
-type AuthMode = 'login' | 'signup' | 'recovery'
 type WheelOption = { id: string; label: string; color?: string }
 
 // Intentionally empty until Haggi supplies the definitive wheel rules and content.
@@ -125,10 +124,7 @@ function App() {
           <span className="about-icon"><FlaskConical size={21} /></span><div><strong>Feito para aprender e cuidar.</strong><p>Um projeto de estudo independente, criado por Haggi, para aproximar a farmacologia da prática em Enfermagem.</p></div><span className="about-deco">✧</span>
         </section>
         <footer className="site-footer"><span>© FarmacoHaggi · Por Haggi</span><span><span className="footer-led" /> Conexão de estudo em andamento</span><a href="#inicio">Voltar ao topo ↑</a></footer>
-        {accountMessage && <div className="toast-message" role="status"><CheckCircle2 size={16} />{accountMessage}<button onClick={() => setAccountMessage('')} aria-label="Fechar mensagem"><X size={14} /></button></div>}
       </main>
-      {!authChecked && <div className="auth-check" aria-live="polite">Verificando sessão segura…</div>}
-      {authMode && <AuthDialog mode={authMode} onClose={() => setAuthMode(null)} onModeChange={setAuthMode} />}
     </div>
   )
 }
