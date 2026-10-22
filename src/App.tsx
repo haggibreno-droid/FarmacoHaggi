@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 import {
   ArrowRight, CheckCircle2, ChevronDown, CircleHelp, Droplets, Eye, EyeOff,
   FlaskConical, HeartPulse, LockKeyhole, Mail, RotateCw, ShieldCheck, Sparkles,
