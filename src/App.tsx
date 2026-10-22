@@ -69,22 +69,6 @@ function WheelStage({ options }: { options: WheelOption[] }) {
 
 function App() {
   return (
- => listener.subscription.unsubscribe()
-  }, [])
-
-  const displayName = useMemo(() => {
-    const metaName = session?.user.user_metadata?.display_name
-    return typeof metaName === 'string' && metaName.trim() ? metaName : session?.user.email?.split('@')[0] ?? 'Estudante'
-  }, [session])
-
-  async function signOut() {
-    if (!supabase) return
-    const { error } = await supabase.auth.signOut()
-    setAccountMessage(error ? 'Não foi possível sair. Tente novamente.' : 'Você saiu da sua conta.')
-    setMenuOpen(false)
-  }
-
-  return (
     <div className="aero-app">
       <div className="sky-wash" aria-hidden="true" />
       <div className="floating-bubble bubble-one" aria-hidden="true" /><div className="floating-bubble bubble-two" aria-hidden="true" /><div className="floating-bubble bubble-three" aria-hidden="true" />
