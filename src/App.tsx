@@ -17,16 +17,20 @@ const wheelOptions: WheelOption[] = []
 function WheelStage({ options }: { options: WheelOption[] }) {
   const [spinning, setSpinning] = useState(false)
   const [message, setMessage] = useState('Aguardando as regras da roleta')
+  const [selectedResult, setSelectedResult] = useState<WheelOption | null>(null)
 
   const canSpin = options.length > 0 && !spinning
 
   function spin() {
     if (!canSpin) return
     setSpinning(true)
+    setSelectedResult(null)
     setMessage('Preparando sua rodada…')
     window.setTimeout(() => {
+      const result = options[Math.floor(Math.random() * options.length)]
+      setSelectedResult(result)
       setSpinning(false)
-      setMessage('Rodada pronta')
+      setMessage('Resultado da rodada')
     }, 1800)
   }
 
@@ -58,7 +62,7 @@ function WheelStage({ options }: { options: WheelOption[] }) {
           <p>A roleta será o coração do FarmacoHaggi. Estamos preparando o espaço para receber as suas regras e opções oficiais.</p>
           <div className="wheel-status-card">
             <span className="status-icon"><CircleHelp size={19} /></span>
-            <div><strong>{message}</strong><small>{options.length === 0 ? 'O conteúdo será adicionado quando você enviar as especificações.' : `${options.length} opções disponíveis`}</small></div>
+            <div><strong>{selectedResult ? selectedResult.label : message}</strong><small>{selectedResult ? 'Resultado selecionado nesta rodada.' : options.length === 0 ? 'O conteúdo será adicionado quando você enviar as especificações.' : `${options.length} opções disponíveis`}</small></div>
           </div>
           <button className="aero-button spin-button" onClick={spin} disabled={!canSpin} aria-describedby="wheel-help">
             <RotateCw size={17} className={spinning ? 'rotate-icon' : ''} /> {spinning ? 'Girando…' : 'Girar a roleta'} <span className="button-glint" />
