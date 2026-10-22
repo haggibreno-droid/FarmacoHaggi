@@ -1,12 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
-import {
-  ArrowRight, CheckCircle2, ChevronDown, CircleHelp, Droplets, Eye, EyeOff,
-  FlaskConical, HeartPulse, LockKeyhole, Mail, RotateCw, ShieldCheck, Sparkles,
-  UserRound, Waves, X,
-} from 'lucide-react'
-import type { Session } from '@supabase/supabase-js'
-import { supabase, supabaseConfigured } from './lib/supabase'
+import { useState } from 'react'
+import { ArrowRight, CircleHelp, Droplets, FlaskConical, HeartPulse, RotateCw, Sparkles, Waves } from 'lucide-react'
 
 type AuthMode = 'login' | 'signup' | 'recovery'
 type WheelOption = { id: string; label: string; color?: string }
@@ -75,100 +68,9 @@ function WheelStage({ options }: { options: WheelOption[] }) {
   )
 }
 
-function AuthDialog({ mode, onClose, onModeChange }: { mode: AuthMode; onClose: () => void; onModeChange: (mode: AuthMode) => void }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [feedback, setFeedback] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null)
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setFeedback(null)
-    if (!supabase || !supabaseConfigured) {
-      setFeedback({ type: 'info', text: 'A autenticação real precisa ser conectada a um projeto Supabase. As instruções estão no README.' })
-      return
-    }
-    setBusy(true)
-    try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: { data: { display_name: displayName.trim() } },
-        })
-        if (error) throw error
-        setFeedback({ type: 'success', text: 'Cadastro enviado. Confira seu e-mail para confirmar a conta, se a confirmação estiver ativada no Supabase.' })
-      } else if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        if (error) throw error
-        onClose()
-      } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/`,
-        })
-        if (error) throw error
-        setFeedback({ type: 'success', text: 'Se o endereço estiver cadastrado, você receberá um e-mail com as instruções de recuperação.' })
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível concluir a solicitação.'
-      setFeedback({ type: 'error', text: message })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const title = mode === 'signup' ? 'Crie seu espaço' : mode === 'recovery' ? 'Recupere o acesso' : 'Que bom ter você de volta'
-  const description = mode === 'signup' ? 'Sua jornada de estudos começa com uma conta.' : mode === 'recovery' ? 'Vamos enviar as instruções para seu e-mail.' : 'Entre para continuar sua jornada de estudos.'
-
-  return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-      <section className="auth-modal aero-window" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-        <div className="modal-titlebar"><span><span className="titlebar-dot" /> CONTA FARMACOHAGGI</span><button onClick={onClose} aria-label="Fechar janela"><X size={17} /></button></div>
-        <div className="auth-body">
-          <div className="auth-mark"><LockKeyhole size={25} /></div>
-          <h2 id="auth-title">{title}</h2><p className="auth-description">{description}</p>
-          {!supabaseConfigured && <div className="setup-alert"><ShieldCheck size={17} /><span>Modo de configuração: conecte o Supabase para habilitar a autenticação real. Nenhum login falso será criado.</span></div>}
-          <form onSubmit={submit}>
-            {mode === 'signup' && <label className="field-label">Como podemos chamar você?<span className="field-control"><UserRound size={17} /><input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Seu nome" autoComplete="name" required /></span></label>}
-            <label className="field-label">E-mail<span className="field-control"><Mail size={17} /><input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@exemplo.com" autoComplete="email" required /></span></label>
-            {mode !== 'recovery' && <label className="field-label">Senha<span className="field-control"><LockKeyhole size={17} /><input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 6 caracteres" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={6} required /><button type="button" className="show-password" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></span></label>}
-            {feedback && <div className={`form-feedback ${feedback.type}`} role="status">{feedback.text}</div>}
-            <button className="aero-button auth-submit" type="submit" disabled={busy}>{busy ? 'Aguarde…' : mode === 'signup' ? 'Criar minha conta' : mode === 'recovery' ? 'Enviar instruções' : 'Entrar'} <ArrowRight size={16} /></button>
-          </form>
-          <div className="auth-switch">
-            {mode === 'login' && <><span>Primeira vez aqui?</span><button onClick={() => onModeChange('signup')}>Criar conta</button><button className="forgot-link" onClick={() => onModeChange('recovery')}>Esqueci a senha</button></>}
-            {mode === 'signup' && <><span>Já tem uma conta?</span><button onClick={() => onModeChange('login')}>Entrar</button></>}
-            {mode === 'recovery' && <button onClick={() => onModeChange('login')}>Voltar para o login</button>}
-          </div>
-        </div>
-      </section>
-    </div>
-  )
-}
-
 function App() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [authChecked, setAuthChecked] = useState(false)
-  const [authMode, setAuthMode] = useState<AuthMode | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [accountMessage, setAccountMessage] = useState('')
-
-  useEffect(() => {
-    if (!supabase) {
-      setAuthChecked(true)
-      return
-    }
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
-      setAuthChecked(true)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession)
-      setAuthChecked(true)
-    })
-    return () => listener.subscription.unsubscribe()
+  return (
+ => listener.subscription.unsubscribe()
   }, [])
 
   const displayName = useMemo(() => {
@@ -193,9 +95,7 @@ function App() {
           <span className="brand-wordmark">Farmaco<span>Haggi</span><small>PHARMACY STUDY LAB</small></span>
         </a>
         <nav className="header-nav" aria-label="Navegação principal"><a href="#roleta">A roleta</a><a href="#sobre">O projeto</a></nav>
-        <div className="header-account">
-          {session ? <div className="account-menu-wrap"><button className="account-chip" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen}><span className="account-avatar">{displayName.charAt(0).toUpperCase()}</span><span>{displayName}</span><ChevronDown size={14} /></button>{menuOpen && <div className="account-menu"><strong>{session.user.email}</strong><button onClick={signOut}>Sair da conta</button></div>}</div> : <><button className="text-button" onClick={() => setAuthMode('login')}>Entrar</button><button className="aero-button header-cta" onClick={() => setAuthMode('signup')}>Criar conta <ArrowRight size={14} /></button></>}
-        </div>
+        <div className="header-account"><span className="header-note">SEU ESPAÇO DE ESTUDO</span></div>
       </header>
 
       <main id="inicio" className="page-content">
