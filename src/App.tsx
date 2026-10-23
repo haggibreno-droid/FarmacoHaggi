@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, Check, CircleHelp, RotateCw, Volume2, VolumeX, Waves, Trophy, GitBranch, House, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, RotateCw, Volume2, VolumeX, Waves, Trophy, GitBranch, House, RotateCcw } from 'lucide-react'
 import { drugs, type Drug } from './pharmacologyData'
 
 type View = 'home' | 'mission' | 'result' | 'flow' | 'reference'
@@ -11,7 +11,6 @@ function readSaved(): SavedState { try { const raw = localStorage.getItem(KEY); 
 function shuffle<T,>(items:T[]):T[] { const copy=[...items]; for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]]} return copy }
 function questionsFor(drug: Drug): Question[] {
   const questions: Question[] = []
-  const sameGroup = drugs.filter(d=>d.group===drug.group && d.id!==drug.id)
   const otherGroups = drugs.filter(d=>d.group!==drug.group)
   const make = (id:string,prompt:string,answer:string,wrong:string[],explanation:string) => {
     const choices = shuffle(Array.from(new Set([answer,...wrong.filter(Boolean).filter(x=>x!==answer)])).slice(0,4))
@@ -51,12 +50,9 @@ function App() {
   function nextQuestion(){if(!selected)return;if(questionIndex+1>=questions.length){const total=sessionResults.length;setSaved(prev=>({...prev,answers:{...prev.answers,[selected.id]:{correct:sessionResults.filter(Boolean).length,total}}}));setView('result');return}setQuestionIndex(i=>i+1);setChoice('');setConfirmed(false)}
   function newRound(){setSaved(prev=>({...prev,remaining:drugs.map(d=>d.id)}));setSelected(null);setView('home')}
   function goHome(){setView('home');setSelected(null)}
-  const classOptions = selected ? Array.from(new Set(drugs.filter(d=>d.id===selected.id || d.group!==selected.group).map(d=>d.group))).filter(g=>g!==selected.group).slice(0,5) : []
-  const flowTargets = selected ? shuffle(Array.from(new Set(drugs.map(d=>d.group)))).slice(0,Math.min(5,new Set(drugs.map(d=>d.group)).size)).filter(g=>g!==selected.group).concat([selected.group]).sort(()=>Math.random()-.5) : []
   const [flowChoices,setFlowChoices] = useState<string[]>([])
   useEffect(()=>{setFlowChoices(selected?shuffle(Array.from(new Set(drugs.map(d=>d.group)))).slice(0,4).filter(g=>g!==selected.group).concat(selected.group).sort(()=>Math.random()-.5):[])},[selected?.id,view])
   function checkFlow(){if(!selected||!flowChoice)return;setFlowChecked(true);if(flowChoice===selected.group){setSaved(prev=>({...prev,flowDone:Array.from(new Set([...prev.flowDone,selected.id]))}));beep(780,.1)}else beep(260,.1)}
-  const progress = selected ? saved.history.indexOf(selected.id)+1 : 0
   return <div className="aero-app lab-app">
     <div className="sky-wash" aria-hidden="true"/><div className="floating-bubble bubble-one"/><div className="floating-bubble bubble-two"/><div className="floating-bubble bubble-three"/>
     <header className="site-header aero-window lab-header">
