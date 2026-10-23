@@ -11,10 +11,10 @@ function readSaved(): SavedState { try { const raw = localStorage.getItem(KEY); 
 function shuffle<T,>(items:T[]):T[] { const copy=[...items]; for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]]} return copy }
 function questionsFor(drug: Drug): Question[] {
   const questions: Question[] = []
-  const otherGroups = drugs.filter(d=>d.group!==drug.group)
   const make = (id:string,prompt:string,answer:string,wrong:string[],explanation:string) => {
     const choices = shuffle(Array.from(new Set([answer,...wrong.filter(Boolean).filter(x=>x!==answer)])).slice(0,4))
-    if(choices.length>=2) questions.push({id,prompt,answer,choices,explanation,source:''})
+    const context = [drug.receptor ? 'Alvo/receptores: '+drug.receptor+'.' : '', drug.effect ? 'Efeito farmacológico: '+drug.effect+'.' : '', drug.indications ? 'Contexto de uso descrito: '+drug.indications+'.' : ''].filter(Boolean).join(' ')
+    if(choices.length>=2) questions.push({id,prompt,answer,choices,explanation: explanation+' '+context,source:''})
   }
   if(drug.receptor) make('receptor','Qual receptor ou alvo é indicado no material para este fármaco?',drug.receptor,shuffle(drugs.filter(d=>d.receptor && d.receptor!==drug.receptor).map(d=>d.receptor!)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,3),'Revise a relação entre o fármaco e seu alvo.')
   if(drug.effect) make('effect','Qual efeito principal está associado a este fármaco?',drug.effect,shuffle(drugs.filter(d=>d.effect && d.effect!==drug.effect).map(d=>d.effect!).filter(x=>x.length<125)).slice(0,3),'Revise a relação entre o fármaco e seu efeito.')
@@ -41,7 +41,6 @@ function App() {
   const spinTimeoutRef = useRef<number | null>(null)
   const revealTimeoutRef = useRef<number | null>(null)
   const intervalRef = useRef<number | null>(null)
-  const [selectedClass,setSelectedClass] = useState('')
   useEffect(()=>{ localStorage.setItem(KEY,JSON.stringify(saved)) },[saved])
   const available = useMemo(()=>drugs.filter(d=>saved.remaining.includes(d.id)),[saved.remaining])
   const currentQuestion = questions[questionIndex]
@@ -50,14 +49,12 @@ function App() {
   function beep(freq=650,duration=.055){ if(!sound) return; try { const Ctx=window.AudioContext || (window as any).webkitAudioContext; const ctx=new Ctx(); const osc=ctx.createOscillator(); const gain=ctx.createGain(); osc.type='sine'; osc.frequency.value=freq; gain.gain.value=.035; osc.connect(gain); gain.connect(ctx.destination); osc.start(); gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration); osc.stop(ctx.currentTime+duration); osc.onended=()=>ctx.close() } catch {} }
   function beginMissionFor(drug: Drug){ const qs=questionsFor(drug);setQuestions(qs);setQuestionIndex(0);setChoice('');setConfirmed(false);setSessionResults([]);setRevealing(false);setView('mission') }
   function spin(){ if(spinning || revealing || selected || available.length===0) return; const index=Math.floor(Math.random()*available.length); const drug=available[index]; const step=360/available.length; const target=(360-(index+.5)*step+360)%360; const next=rotation + 360*5 + ((target-(rotation%360)+360)%360); setSelected(null);setRevealing(false);setSpinning(true);setRotation(next);let ticks=0;intervalRef.current=window.setInterval(()=>{ticks++;beep(ticks>15?900:560,ticks>15?.035:.025);if(ticks>=22&&intervalRef.current!==null){window.clearInterval(intervalRef.current);intervalRef.current=null}},125);spinTimeoutRef.current=window.setTimeout(()=>{setSpinning(false);setSelected(drug);setRevealing(true);setSaved(prev=>({...prev,remaining:prev.remaining.filter(id=>id!==drug.id),history:prev.history.includes(drug.id)?prev.history:[...prev.history,drug.id]}));beep(820,.12);revealTimeoutRef.current=window.setTimeout(()=>beginMissionFor(drug),3000)},4200) }
-  function resetRound(){if(spinTimeoutRef.current!==null)window.clearTimeout(spinTimeoutRef.current);if(revealTimeoutRef.current!==null)window.clearTimeout(revealTimeoutRef.current);if(intervalRef.current!==null)window.clearInterval(intervalRef.current);spinTimeoutRef.current=null;revealTimeoutRef.current=null;intervalRef.current=null;setSpinning(false);setRevealing(false);setSelected(null);setQuestions([]);setQuestionIndex(0);setChoice('');setConfirmed(false);setSessionResults([]);setFlowChoice('');setFlowChecked(false);setSelectedClass('');setRotation(0);setView('home');setSaved(prev=>({...prev,remaining:drugs.map(d=>d.id)})) }
+  function resetRound(){if(spinTimeoutRef.current!==null)window.clearTimeout(spinTimeoutRef.current);if(revealTimeoutRef.current!==null)window.clearTimeout(revealTimeoutRef.current);if(intervalRef.current!==null)window.clearInterval(intervalRef.current);spinTimeoutRef.current=null;revealTimeoutRef.current=null;intervalRef.current=null;setSpinning(false);setRevealing(false);setSelected(null);setQuestions([]);setQuestionIndex(0);setChoice('');setConfirmed(false);setSessionResults([]);setFlowChoice('');setFlowChecked(false);setRotation(0);setView('home');setSaved(prev=>({...prev,remaining:drugs.map(d=>d.id)})) }
   useEffect(()=>()=>{if(spinTimeoutRef.current!==null)window.clearTimeout(spinTimeoutRef.current);if(revealTimeoutRef.current!==null)window.clearTimeout(revealTimeoutRef.current);if(intervalRef.current!==null)window.clearInterval(intervalRef.current)},[])
   function confirmAnswer(){ if(!choice||confirmed||!currentQuestion||!selected)return;const ok=choice===currentQuestion.answer;setSessionResults(prev=>[...prev,ok]);setConfirmed(true);beep(ok?800:260,.1) }
   function nextQuestion(){if(!selected)return;if(questionIndex+1>=questions.length){const total=sessionResults.length;setSaved(prev=>({...prev,answers:{...prev.answers,[selected.id]:{correct:sessionResults.filter(Boolean).length,total}}}));setFlowChoice('');setFlowChecked(false);setSelectedClass('');setView('flow');return}setQuestionIndex(i=>i+1);setChoice('');setConfirmed(false)}
   function newRound(){resetRound()}
   function goHome(){setView('home');setSelected(null)}
-  const [flowChoices,setFlowChoices] = useState<string[]>([])
-  useEffect(()=>{setFlowChoices(selected?shuffle(Array.from(new Set(drugs.map(d=>d.group)))).slice(0,4).filter(g=>g!==selected.group).concat(selected.group).sort(()=>Math.random()-.5):[])},[selected?.id,view])
   function checkFlow(){if(!selected||!flowChoice)return;setFlowChecked(true);if(flowChoice===selected.group){setSaved(prev=>({...prev,flowDone:Array.from(new Set([...prev.flowDone,selected.id]))}));beep(780,.1)}else beep(260,.1)}
   return <div className="aero-app lab-app">
     <div className="sky-wash" aria-hidden="true"/><div className="floating-bubble bubble-one"/><div className="floating-bubble bubble-two"/><div className="floating-bubble bubble-three"/>
