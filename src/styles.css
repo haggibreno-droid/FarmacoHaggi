@@ -87,3 +87,8 @@
 .lab-app .answer-option.chosen{box-shadow:inset 1px 1px 0 #fff,2px 2px 0 #78bddc}
 .lab-app .class-reference-table th{font-family:'Nunito',sans-serif}
 @media(max-width:650px){.class-table-wrap{max-height:62vh}.class-reference-table{font-size:11px}.class-reference-table th,.class-reference-table td{padding:9px 8px}.class-reference-table th{font-size:9px}.class-reference-table td:nth-child(2){min-width:190px}.class-reference-table td:first-child{min-width:145px}}
+
+/* Estado vazio da tabela em montagem: deixa claro que ela será construída pelo estudante */
+.class-reference-table .empty-table-cell{display:inline-block;padding:4px 7px;border:1px dashed #9bc9dc;border-radius:2px;background:#f4fbff;color:#78a0b5;font-size:10px;font-style:italic;font-weight:600}
+.class-reference-table td.table-count{text-align:left;font-weight:600;min-width:180px}
+.class-reference-table tbody tr{transition:background .15s}
