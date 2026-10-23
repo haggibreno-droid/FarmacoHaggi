@@ -68,7 +68,7 @@ function App() {
           <div className="roulette-stage">
             <div className="roulette-glow"/>
             <div className={'roulette-wheel '+(spinning?'wheel-spinning':'')} style={{transform:'rotate('+rotation+'deg)'}}>
-              <div className="wheel-face" style={{background: 'conic-gradient('+available.map((d,i)=>{const hue=196+(i%5)*7;return 'hsl('+hue+' 76% '+(84+(i%3)*3)+'%) '+(i*100/Math.max(available.length,1))+'% '+((i+1)*100/Math.max(available.length,1))+'%'}).join(',')+')'}}>
+              <div className="wheel-face" style={{background: 'conic-gradient('+available.map((_,i)=>{const hue=196+(i%5)*7;return 'hsl('+hue+' 76% '+(84+(i%3)*3)+'%) '+(i*100/Math.max(available.length,1))+'% '+((i+1)*100/Math.max(available.length,1))+'%'}).join(',')+')'}}>
                 <div className="wheel-center"><Waves size={29}/><small>FÁRMACO</small></div>
                 {available.length<=18 && available.map((d,i)=> <span key={d.id} className="wheel-label" style={{transform:'translate(-50%,-50%) rotate('+(i*360/available.length+180/available.length)+'deg) translateY(-112px)'}}>{d.name}</span>)}
               </div>
