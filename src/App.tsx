@@ -38,6 +38,7 @@ function App() {
   const [flowChecked,setFlowChecked] = useState(false)
   const [search,setSearch] = useState('')
   const [wheelListOpen,setWheelListOpen] = useState(false)
+  const [selectedClass,setSelectedClass] = useState('')
   const spinTimeoutRef = useRef<number | null>(null)
   const revealTimeoutRef = useRef<number | null>(null)
   const intervalRef = useRef<number | null>(null)
