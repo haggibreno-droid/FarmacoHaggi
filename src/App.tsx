@@ -1,116 +1,115 @@
-import { useState } from 'react'
-import { ArrowRight, CircleHelp, Droplets, FlaskConical, HeartPulse, RotateCw, Sparkles, Waves } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ArrowRight, BookOpen, Check, CircleHelp, RotateCw, Volume2, VolumeX, Waves, Trophy, GitBranch, House, RotateCcw } from 'lucide-react'
+import { drugs, type Drug } from './pharmacologyData'
 
-type WheelOption = { id: string; label: string; color?: string }
-
-// Intentionally empty until Haggi supplies the definitive wheel rules and content.
-const wheelOptions: WheelOption[] = []
-
-function WheelStage({ options }: { options: WheelOption[] }) {
-  const [spinning, setSpinning] = useState(false)
-  const [message, setMessage] = useState('Aguardando as regras da roleta')
-  const [selectedResult, setSelectedResult] = useState<WheelOption | null>(null)
-
-  const canSpin = options.length > 0 && !spinning
-
-  function spin() {
-    if (!canSpin) return
-    setSpinning(true)
-    setSelectedResult(null)
-    setMessage('Preparando sua rodada…')
-    window.setTimeout(() => {
-      const result = options[Math.floor(Math.random() * options.length)]
-      setSelectedResult(result)
-      setSpinning(false)
-      setMessage('Resultado da rodada')
-    }, 1800)
+type View = 'home' | 'mission' | 'result' | 'flow' | 'reference'
+type Question = { id: string; prompt: string; answer: string; choices: string[]; explanation: string; source: string }
+type SavedState = { remaining: string[]; history: string[]; answers: Record<string, {correct: number; total: number}>; flowDone: string[] }
+const KEY = 'laboratorio-farmacologia-progress-v1'
+const initialSaved = (): SavedState => ({remaining: drugs.map(d=>d.id), history: [], answers: {}, flowDone: []})
+function readSaved(): SavedState { try { const raw = localStorage.getItem(KEY); if (!raw) return initialSaved(); const parsed = JSON.parse(raw) as SavedState; return { ...initialSaved(), ...parsed } } catch { return initialSaved() } }
+function shuffle<T,>(items:T[]):T[] { const copy=[...items]; for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]]} return copy }
+function questionsFor(drug: Drug): Question[] {
+  const questions: Question[] = []
+  const sameGroup = drugs.filter(d=>d.group===drug.group && d.id!==drug.id)
+  const otherGroups = drugs.filter(d=>d.group!==drug.group)
+  const make = (id:string,prompt:string,answer:string,wrong:string[],explanation:string) => {
+    const choices = shuffle(Array.from(new Set([answer,...wrong.filter(Boolean).filter(x=>x!==answer)])).slice(0,4))
+    if(choices.length>=2) questions.push({id,prompt,answer,choices,explanation,source:'PDF enviado · p. '+drug.page})
   }
-
-  return (
-    <section className="wheel-panel glass-panel" aria-labelledby="wheel-title">
-      <div className="panel-topline">
-        <span className="mini-window-icon"><Waves size={15} /></span>
-        <span>FARMACOHAGGI / INTERAÇÃO</span>
-        <span className="window-status"><i /> COMPONENTE PREPARADO</span>
-      </div>
-      <div className="wheel-layout">
-        <div className={`wheel-wrap ${spinning ? 'is-spinning' : ''}`}>
-          <div className="wheel-halo halo-a" />
-          <div className="wheel-halo halo-b" />
-          <div className="wheel-bubble bubble-a" />
-          <div className="wheel-bubble bubble-b" />
-          <div className="wheel-disc" aria-hidden="true">
-            <div className="disc-shine" />
-            <div className="disc-orbit orbit-a" />
-            <div className="disc-orbit orbit-b" />
-            <div className="disc-center"><HeartPulse size={45} strokeWidth={1.5} /></div>
-            <span className="disc-spark spark-a">✦</span><span className="disc-spark spark-b">✧</span>
-          </div>
-          <div className="wheel-pointer" aria-hidden="true">▼</div>
-        </div>
-        <div className="wheel-copy">
-          <span className="aero-kicker"><Sparkles size={13} /> SEU ESPAÇO DE DESCOBERTA</span>
-          <h2 id="wheel-title">Uma rodada de<br /><em>conhecimento.</em></h2>
-          <p>A roleta será o coração do FarmacoHaggi. Estamos preparando o espaço para receber as suas regras e opções oficiais.</p>
-          <div className="wheel-status-card">
-            <span className="status-icon"><CircleHelp size={19} /></span>
-            <div><strong>{selectedResult ? selectedResult.label : message}</strong><small>{selectedResult ? 'Resultado selecionado nesta rodada.' : options.length === 0 ? 'O conteúdo será adicionado quando você enviar as especificações.' : `${options.length} opções disponíveis`}</small></div>
-          </div>
-          <button className="aero-button spin-button" onClick={spin} disabled={!canSpin} aria-describedby="wheel-help">
-            <RotateCw size={17} className={spinning ? 'rotate-icon' : ''} /> {spinning ? 'Girando…' : 'Girar a roleta'} <span className="button-glint" />
-          </button>
-          <p id="wheel-help" className="wheel-help">{options.length === 0 ? 'Disponível assim que definirmos as regras da roleta.' : 'Clique para iniciar uma rodada.'}</p>
-        </div>
-      </div>
-      <div className="panel-bottomline"><span><span className="signal-dot" /> SISTEMA PRONTO PARA CONFIGURAÇÃO</span><span>v0.2 · BETA VISUAL</span></div>
-    </section>
-  )
+  make('class', 'A qual classe farmacológica o fármaco pertence?', drug.className, shuffle(otherGroups.map(d=>d.className)).filter(x=>x!==drug.className).filter((x,i,a)=>a.indexOf(x)===i).slice(0,3), 'O material agrupa este fármaco em “'+drug.group+'”.')
+  if(drug.receptor) make('receptor','Qual receptor ou alvo é indicado no material para este fármaco?',drug.receptor,shuffle(drugs.filter(d=>d.receptor && d.receptor!==drug.receptor).map(d=>d.receptor!)).filter((x,i,a)=>a.indexOf(x)===i).slice(0,3),'O receptor está descrito na tabela do material.')
+  if(drug.effect) make('effect','Qual efeito principal o PDF associa a este fármaco?',drug.effect,shuffle(drugs.filter(d=>d.effect && d.effect!==drug.effect).map(d=>d.effect!).filter(x=>x.length<125)).slice(0,3),'Efeito conforme a tabela do PDF.')
+  if(drug.indications) make('indication','Qual indicação aparece no material para este fármaco?',drug.indications,shuffle(drugs.filter(d=>d.indications && d.indications!==drug.indications).map(d=>d.indications!).filter(x=>x.length<105)).slice(0,3),'Indicação transcrita do material enviado.')
+  return questions
 }
-
 function App() {
-  return (
-    <div className="aero-app">
-      <div className="sky-wash" aria-hidden="true" />
-      <div className="floating-bubble bubble-one" aria-hidden="true" /><div className="floating-bubble bubble-two" aria-hidden="true" /><div className="floating-bubble bubble-three" aria-hidden="true" />
-      <header className="site-header aero-window">
-        <a className="brand" href="#inicio" aria-label="FarmacoHaggi, início">
-          <span className="brand-icon"><span className="brand-drop"><Droplets size={23} /></span><span className="brand-heart"><HeartPulse size={15} /></span></span>
-          <span className="brand-wordmark">Farmaco<span>Haggi</span><small>PHARMACY STUDY LAB</small></span>
-        </a>
-        <nav className="header-nav" aria-label="Navegação principal"><a href="#roleta">A roleta</a><a href="#sobre">O projeto</a></nav>
-        <div className="header-account"><span className="header-note">SEU ESPAÇO DE ESTUDO</span></div>
-      </header>
-
-      <main id="inicio" className="page-content">
-        <div className="intro-line"><span className="status-lamp" /> UM CANTINHO DE ESTUDO NA INTERNET <span className="intro-version">✦ WEB EDITION 2000</span></div>
-        <section className="hero-copy">
-          <div className="hero-text">
-            <div className="hero-badge"><Sparkles size={14} /> CIÊNCIA, CUIDADO & CURIOSIDADE</div>
-            <h1>Farmacologia com<br /><em>outro brilho.</em></h1>
-            <p>Um espaço autoral para explorar a farmacologia aplicada à Enfermagem — com calma, clareza e um toque de nostalgia digital.</p>
-            <a className="soft-link" href="#roleta">Conhecer a roleta <ArrowRight size={16} /></a>
+  const [view,setView] = useState<View>('home')
+  const [saved,setSaved] = useState<SavedState>(()=>readSaved())
+  const [selected,setSelected] = useState<Drug|null>(null)
+  const [rotation,setRotation] = useState(0)
+  const [spinning,setSpinning] = useState(false)
+  const [sound,setSound] = useState(false)
+  const [questionIndex,setQuestionIndex] = useState(0)
+  const [questions,setQuestions] = useState<Question[]>([])
+  const [choice,setChoice] = useState('')
+  const [confirmed,setConfirmed] = useState(false)
+  const [sessionResults,setSessionResults] = useState<boolean[]>([])
+  const [flowChoice,setFlowChoice] = useState('')
+  const [flowChecked,setFlowChecked] = useState(false)
+  const [search,setSearch] = useState('')
+  const [wheelListOpen,setWheelListOpen] = useState(false)
+  useEffect(()=>{ localStorage.setItem(KEY,JSON.stringify(saved)) },[saved])
+  const available = useMemo(()=>drugs.filter(d=>saved.remaining.includes(d.id)),[saved.remaining])
+  const currentQuestion = questions[questionIndex]
+  const correctCount = sessionResults.filter(Boolean).length
+  const filteredDrugs = useMemo(()=>drugs.filter(d=>(d.name+' '+d.group+' '+d.className).toLowerCase().includes(search.toLowerCase())),[search])
+  function beep(freq=650,duration=.055){ if(!sound) return; try { const Ctx=window.AudioContext || (window as any).webkitAudioContext; const ctx=new Ctx(); const osc=ctx.createOscillator(); const gain=ctx.createGain(); osc.type='sine'; osc.frequency.value=freq; gain.gain.value=.035; osc.connect(gain); gain.connect(ctx.destination); osc.start(); gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration); osc.stop(ctx.currentTime+duration); osc.onended=()=>ctx.close() } catch {} }
+  function spin(){ if(spinning || available.length===0) return; const index=Math.floor(Math.random()*available.length); const drug=available[index]; const step=360/available.length; const target=(360-(index+.5)*step+360)%360; const next=rotation + 360*5 + ((target-(rotation%360)+360)%360); setSelected(drug); setSpinning(true); setRotation(next); let ticks=0; const interval=window.setInterval(()=>{ticks++;beep(ticks>15?900:560, ticks>15?.035:.025);if(ticks>=22)window.clearInterval(interval)},125); window.setTimeout(()=>{setSpinning(false);setSaved(prev=>({...prev,remaining:prev.remaining.filter(id=>id!==drug.id),history:[...prev.history,drug.id]}));beep(820,.12)},4200) }
+  function startMission(){ if(!selected)return; const qs=questionsFor(selected);setQuestions(qs);setQuestionIndex(0);setChoice('');setConfirmed(false);setSessionResults([]);setView('mission') }
+  function confirmAnswer(){ if(!choice||confirmed||!currentQuestion||!selected)return;const ok=choice===currentQuestion.answer;setSessionResults(prev=>[...prev,ok]);setConfirmed(true);beep(ok?800:260,.1) }
+  function nextQuestion(){if(!selected)return;if(questionIndex+1>=questions.length){const total=sessionResults.length;setSaved(prev=>({...prev,answers:{...prev.answers,[selected.id]:{correct:sessionResults.filter(Boolean).length,total}}}));setView('result');return}setQuestionIndex(i=>i+1);setChoice('');setConfirmed(false)}
+  function newRound(){setSaved(prev=>({...prev,remaining:drugs.map(d=>d.id)}));setSelected(null);setView('home')}
+  function goHome(){setView('home');setSelected(null)}
+  const classOptions = selected ? Array.from(new Set(drugs.filter(d=>d.id===selected.id || d.group!==selected.group).map(d=>d.group))).filter(g=>g!==selected.group).slice(0,5) : []
+  const flowTargets = selected ? shuffle(Array.from(new Set(drugs.map(d=>d.group)))).slice(0,Math.min(5,new Set(drugs.map(d=>d.group)).size)).filter(g=>g!==selected.group).concat([selected.group]).sort(()=>Math.random()-.5) : []
+  const [flowChoices,setFlowChoices] = useState<string[]>([])
+  useEffect(()=>{setFlowChoices(selected?shuffle(Array.from(new Set(drugs.map(d=>d.group)))).slice(0,4).filter(g=>g!==selected.group).concat(selected.group).sort(()=>Math.random()-.5):[])},[selected?.id,view])
+  function checkFlow(){if(!selected||!flowChoice)return;setFlowChecked(true);if(flowChoice===selected.group){setSaved(prev=>({...prev,flowDone:Array.from(new Set([...prev.flowDone,selected.id]))}));beep(780,.1)}else beep(260,.1)}
+  const progress = selected ? saved.history.indexOf(selected.id)+1 : 0
+  return <div className="aero-app lab-app">
+    <div className="sky-wash" aria-hidden="true"/><div className="floating-bubble bubble-one"/><div className="floating-bubble bubble-two"/><div className="floating-bubble bubble-three"/>
+    <header className="site-header aero-window lab-header">
+      <a className="brand" href="#inicio" onClick={e=>{e.preventDefault();goHome()}}><span className="brand-icon"><span className="brand-drop"><Waves size={23}/></span></span><span className="brand-wordmark">Laboratório <span>de Farmacologia</span><small>ESTUDO INTERATIVO · ENFERMAGEM</small></span></a>
+      <nav className="header-nav"><button className={view==='home'?'nav-active':''} onClick={goHome}><House size={14}/> Início</button><button className={view==='flow'?'nav-active':''} onClick={()=>setView('flow')}><GitBranch size={14}/> Fluxograma</button><button className={view==='reference'?'nav-active':''} onClick={()=>{setSearch('');setView('reference')}}><BookOpen size={14}/> Fármacos</button></nav>
+      <button className="sound-toggle" onClick={()=>setSound(s=>!s)} aria-label={sound?'Desativar sons':'Ativar sons'} title={sound?'Desativar sons':'Ativar sons'}>{sound?<Volume2 size={17}/>:<VolumeX size={17}/>}<span>Som {sound?'ligado':'desligado'}</span></button>
+    </header>
+    <main id="inicio" className="lab-main">
+      {view==='home' && <>
+        <div className="lab-topline"><span><i className="status-lamp"/> LABORATÓRIO DE FARMACOLOGIA</span><span>{saved.history.length} / {drugs.length} sorteados nesta rodada</span></div>
+        <section className="roulette-hero">
+          <div className="roulette-title"><span className="section-kicker">SORTEIO DE ESTUDO</span><h1>Qual será o próximo <em>fármaco?</em></h1></div>
+          <div className="roulette-stage">
+            <div className="roulette-glow"/>
+            <div className={'roulette-wheel '+(spinning?'wheel-spinning':'')} style={{transform:'rotate('+rotation+'deg)'}}>
+              <div className="wheel-face" style={{background: 'conic-gradient('+available.map((d,i)=>{const hue=196+(i%5)*7;return 'hsl('+hue+' 76% '+(84+(i%3)*3)+'%) '+(i*100/Math.max(available.length,1))+'% '+((i+1)*100/Math.max(available.length,1))+'%'}).join(',')+')'}}>
+                <div className="wheel-center"><Waves size={29}/><small>FÁRMACO</small></div>
+                {available.length<=18 && available.map((d,i)=> <span key={d.id} className="wheel-label" style={{transform:'translate(-50%,-50%) rotate('+(i*360/available.length+180/available.length)+'deg) translateY(-112px)'}}>{d.name}</span>)}
+              </div>
+            </div>
+            <div className="roulette-pointer" aria-hidden="true"><span/></div>
           </div>
-          <div className="hero-visual" aria-label="Ilustração decorativa aquática">
-            <div className="cloud cloud-one" /><div className="cloud cloud-two" />
-            <div className="hero-globe"><div className="globe-gloss" /><div className="globe-land land-one" /><div className="globe-land land-two" /><div className="globe-heart"><HeartPulse size={51} /></div></div>
-            <div className="orbit orbit-one" /><div className="orbit orbit-two" />
-            <div className="mini-bubble mb-one" /><div className="mini-bubble mb-two" /><div className="mini-bubble mb-three" />
-            <div className="hero-caption"><span className="caption-dot" /> UM UNIVERSO DE POSSIBILIDADES</div>
-          </div>
+          {selected && <div className="draw-result"><span>FÁRMACO SORTEADO</span><strong>{selected.name}</strong><small>{selected.group}</small><div className="result-actions"><button className="aero-button primary-action" onClick={startMission}>Iniciar missão <ArrowRight size={16}/></button><button className="soft-action" onClick={()=>setView('reference')}>Consultar ficha</button></div></div>}
+          {!selected && <p className="roulette-caption">{available.length ? 'Uma rodada por fármaco · sem repetição' : 'Todos os fármacos desta rodada foram sorteados.'}</p>}
+          <button className="aero-button spin-button lab-spin" onClick={spin} disabled={spinning||available.length===0}><RotateCw size={17} className={spinning?'rotate-icon':''}/>{spinning?'Girando…':available.length===0?'Rodada concluída':'Girar roleta'}</button>
+          {available.length===0 && <button className="soft-action" onClick={newRound}><RotateCcw size={15}/> Iniciar nova rodada</button>}
+          <div className="wheel-meta"><span><span className="signal-dot"/> {available.length} elegíveis</span><button className="text-button" onClick={()=>setWheelListOpen(v=>!v)}>{wheelListOpen?'Ocultar lista':'Ver lista de fármacos'}</button></div>
+          {wheelListOpen && <div className="eligible-list">{available.map(d=><span key={d.id}>{d.name}</span>)}{available.length===0&&<span>Rodada concluída</span>}</div>}
         </section>
-
-        <section id="roleta" className="wheel-section">
-          <div className="section-heading"><div><span className="section-kicker"><Waves size={14} /> O CENTRO DA EXPERIÊNCIA</span><h2>Pronto para girar?</h2><p>Um espaço reservado para a sua próxima descoberta.</p></div><div className="window-counter"><span>01</span> / 01 <span className="counter-dot" /></div></div>
-          <WheelStage options={wheelOptions} />
-        </section>
-
-        <section id="sobre" className="about-strip aero-window">
-          <span className="about-icon"><FlaskConical size={21} /></span><div><strong>Feito para aprender e cuidar.</strong><p>Um projeto de estudo independente, criado por Haggi, para aproximar a farmacologia da prática em Enfermagem.</p></div><span className="about-deco">✧</span>
-        </section>
-        <footer className="site-footer"><span>© FarmacoHaggi · Por Haggi</span><span><span className="footer-led" /> Conexão de estudo em andamento</span><a href="#inicio">Voltar ao topo ↑</a></footer>
-      </main>
-    </div>
-  )
+        <section className="lab-bottom-nav"><button onClick={()=>setView('reference')}><BookOpen size={18}/><span><strong>Consultar conteúdo</strong><small>{drugs.length} fármacos do PDF</small></span><ArrowRight size={16}/></button><button onClick={()=>setView('flow')}><GitBranch size={18}/><span><strong>Fluxograma</strong><small>{saved.flowDone.length} classificações concluídas</small></span><ArrowRight size={16}/></button><div className="progress-mini"><span>Progresso da rodada</span><strong>{Math.round(saved.history.length/drugs.length*100)}%</strong><div><i style={{width:(saved.history.length/drugs.length*100)+'%'}}/></div></div></section>
+      </>}
+      {view==='mission' && selected && currentQuestion && <section className="study-screen glass-panel">
+        <div className="screen-top"><button className="back-button" onClick={()=>setView('home')}><ArrowLeft size={16}/> Sair da missão</button><span>MISSÃO · {selected.name}</span></div>
+        <div className="question-progress"><span>Questão {questionIndex+1} de {questions.length}</span><div>{questions.map((q,i)=><i key={q.id} className={i<questionIndex?'done':i===questionIndex?'current':''}/>)}</div></div>
+        <span className="section-kicker">FÁRMACO EM ESTUDO</span><h1 className="drug-title">{selected.name}</h1><h2 className="question-title">{currentQuestion.prompt}</h2>
+        <div className="answer-options">{currentQuestion.choices.map((c,i)=><button key={c} className={'answer-option '+(choice===c?'chosen':'')+(confirmed&&c===currentQuestion.answer?' correct':'')+(confirmed&&choice===c&&c!==currentQuestion.answer?' incorrect':'')} onClick={()=>!confirmed&&setChoice(c)} disabled={confirmed}><span>{String.fromCharCode(65+i)}</span>{c}{confirmed&&c===currentQuestion.answer&&<Check size={18}/>}</button>)}</div>
+        {confirmed && <div className={'answer-feedback '+(choice===currentQuestion.answer?'feedback-correct':'feedback-wrong')}><strong>{choice===currentQuestion.answer?'Resposta correta':'Vamos revisar'}</strong><p>{currentQuestion.explanation}</p><small>{currentQuestion.source}</small></div>}
+        <div className="question-footer"><span>{confirmed?sessionResults[sessionResults.length-1]?'Acerto registrado':'Resposta registrada':'Escolha uma alternativa'}</span>{!confirmed?<button className="aero-button primary-action" disabled={!choice} onClick={confirmAnswer}>Confirmar resposta <Check size={16}/></button>:<button className="aero-button primary-action" onClick={nextQuestion}>{questionIndex+1===questions.length?'Ver resultado':'Próxima questão'} <ArrowRight size={16}/></button>}</div>
+      </section>}
+      {view==='result' && selected && <section className="study-screen glass-panel result-screen">
+        <div className="result-trophy"><Trophy size={30}/></div><span className="section-kicker">MISSÃO CONCLUÍDA</span><h1>{selected.name}</h1><p className="result-subtitle">Seu resultado nesta missão</p>
+        <div className="score-grid"><div><strong>{sessionResults.length}</strong><span>Respondidas</span></div><div><strong>{correctCount}</strong><span>Acertos</span></div><div><strong>{sessionResults.length-correctCount}</strong><span>Erros</span></div><div><strong>{Math.round(correctCount/Math.max(sessionResults.length,1)*100)}%</strong><span>Aproveitamento</span></div></div>
+        <div className="review-list"><h2>Revisão das respostas</h2>{questions.map((q,i)=><div key={q.id} className="review-item"><span className={sessionResults[i]?'review-ok':'review-no'}>{sessionResults[i]?'✓':'!'}</span><div><strong>{q.prompt}</strong><p>Resposta: {q.answer}</p><small>{q.source}</small></div></div>)}</div>
+        <div className="result-actions"><button className="aero-button primary-action" onClick={()=>setView('flow')}>Classificar no fluxograma <GitBranch size={16}/></button><button className="soft-action" onClick={()=>setView('reference')}>Consultar fármaco</button><button className="soft-action" onClick={goHome}>Voltar à roleta <RotateCcw size={15}/></button></div>
+      </section>}
+      {view==='flow' && <section className="study-screen glass-panel flow-screen">
+        <div className="screen-top"><button className="back-button" onClick={goHome}><ArrowLeft size={16}/> Início</button><span>ATIVIDADE DE CLASSIFICAÇÃO</span></div>
+        <span className="section-kicker">FLUXOGRAMA INTERATIVO</span><h1>Onde esse fármaco se encaixa?</h1><p className="muted-copy">Escolha a categoria descrita no material. Você também pode usar o teclado.</p>
+        {!selected ? <div className="flow-empty"><BookOpen size={24}/><p>Sorteie um fármaco primeiro para iniciar a classificação.</p><button className="aero-button primary-action" onClick={goHome}>Ir à roleta <ArrowRight size={16}/></button></div> : <><div className="flow-chain"><div>CLASSE / GRUPO</div><ArrowRight size={18}/><div className="flow-drug">{selected.name}</div></div><h2 className="flow-question">Selecione o grupo farmacológico:</h2><div className="flow-targets">{flowChoices.map(group=><button key={group} className={'flow-target '+(flowChoice===group?'chosen':'')+(flowChecked&&group===selected.group?' correct':'')+(flowChecked&&flowChoice===group&&group!==selected.group?' incorrect':'')} onClick={()=>{if(!flowChecked)setFlowChoice(group)}} disabled={flowChecked}>{group}</button>)}</div>{flowChecked&&<div className={'answer-feedback '+(flowChoice===selected.group?'feedback-correct':'feedback-wrong')}><strong>{flowChoice===selected.group?'Classificação correta!':'Ainda não.'}</strong><p>Segundo o PDF, {selected.name} está em: {selected.group}.</p><small>Fonte: PDF enviado · página {selected.page}</small></div>}<div className="question-footer"><span>{saved.flowDone.length} fármacos classificados</span>{!flowChecked?<button className="aero-button primary-action" disabled={!flowChoice} onClick={checkFlow}>Verificar <Check size={16}/></button>:<button className="aero-button primary-action" onClick={()=>{setFlowChoice('');setFlowChecked(false);setView('home')}}>Concluir <ArrowRight size={16}/></button>}</div></>}
+      </section>}
+      {view==='reference' && <section className="reference-screen glass-panel"><div className="screen-top"><button className="back-button" onClick={()=>setView(selected?'home':'home')}><ArrowLeft size={16}/> Voltar</button><span>BASE DO MATERIAL</span></div><span className="section-kicker">CONSULTA FARMACOLÓGICA</span><h1>Fichas de fármacos</h1><div className="reference-search"><BookOpen size={17}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar fármaco ou classe…" aria-label="Buscar fármaco ou classe"/></div><div className="reference-grid">{filteredDrugs.map(d=><article className="drug-card" key={d.id}><div className="drug-card-top"><span>{d.group}</span><small>PDF · p. {d.page}</small></div><h2>{d.name}</h2><p><strong>Classe:</strong> {d.className}</p>{d.receptor&&<details><summary>Receptor</summary><p>{d.receptor}</p></details>}{d.effect&&<details><summary>Efeito principal</summary><p>{d.effect}</p></details>}{d.indications&&<details><summary>Indicações</summary><p>{d.indications}</p></details>}{d.notes&&<details><summary>Observações do material</summary><p>{d.notes}</p></details>}<button className="soft-action" onClick={()=>{setSelected(d);setView('home')}}>Selecionar para estudar <ArrowRight size={14}/></button></article>)}</div></section>}
+      <footer className="lab-footer"><span>Laboratório de Farmacologia · Por Haggi</span><span>Conteúdo baseado no PDF fornecido · 9 páginas</span></footer>
+    </main>
+  </div>
 }
-
 export default App
