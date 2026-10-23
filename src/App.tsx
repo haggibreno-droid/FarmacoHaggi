@@ -73,7 +73,7 @@ function App() {
             <div className={'roulette-wheel '+(spinning?'wheel-spinning':'')} style={{transform:'rotate('+rotation+'deg)'}}>
               <div className="wheel-face" style={{background: 'conic-gradient('+available.map((_,i)=>{const hue=196+(i%5)*7;return 'hsl('+hue+' 76% '+(84+(i%3)*3)+'%) '+(i*100/Math.max(available.length,1))+'% '+((i+1)*100/Math.max(available.length,1))+'%'}).join(',')+')'}}>
                 <div className="wheel-center"><Waves size={29}/><small>FÁRMACO</small></div>
-                {available.length<=18 && available.map((d,i)=> <span key={d.id} className="wheel-label" style={{transform:'translate(-50%,-50%) rotate('+(i*360/available.length+180/available.length)+'deg) translateY(-112px)'}}>{d.name}</span>)}
+                {!spinning && available.length<=18 && available.map((d,i)=> <span key={d.id} className="wheel-label" style={{transform:'translate(-50%,-50%) rotate('+(i*360/available.length+180/available.length)+'deg) translateY(-112px)'}}>{d.name}</span>)}
               </div>
             </div>
             <div className="roulette-pointer" aria-hidden="true"><span/></div>
@@ -83,7 +83,7 @@ function App() {
           <button className="aero-button spin-button lab-spin" onClick={spin} disabled={spinning||revealing||available.length===0}><RotateCw size={17} className={spinning?'rotate-icon':''}/>{spinning?'Girando…':revealing?'Fármaco sorteado…':available.length===0?'Rodada concluída':'Girar roleta'}</button>
           {available.length===0 && <button className="soft-action" onClick={newRound}><RotateCcw size={15}/> Iniciar nova rodada</button>}
           <div className="wheel-meta"><span><span className="signal-dot"/> {available.length} elegíveis</span><button className="text-button" onClick={()=>setWheelListOpen(v=>!v)}>{wheelListOpen?'Ocultar lista':'Ver lista de fármacos'}</button></div>
-          {wheelListOpen && <div className="eligible-list">{available.map(d=><span key={d.id}>{d.name}</span>)}{available.length===0&&<span>Rodada concluída</span>}</div>}
+          {wheelListOpen && !spinning && <div className="eligible-list">{available.map(d=><span key={d.id}>{d.name}</span>)}{available.length===0&&<span>Rodada concluída</span>}</div>}
         </section>
         <section className="lab-bottom-nav"><button onClick={()=>setView('reference')}><BookOpen size={18}/><span><strong>Consultar conteúdo</strong><small>{drugs.length} fármacos cadastrados</small></span><ArrowRight size={16}/></button><button onClick={()=>setView('flow')}><GitBranch size={18}/><span><strong>Fluxograma</strong><small>{saved.flowDone.length} classificações concluídas</small></span><ArrowRight size={16}/></button><div className="progress-mini"><span>Progresso da rodada</span><strong>{Math.round(saved.history.length/drugs.length*100)}%</strong><div><i style={{width:(saved.history.length/drugs.length*100)+'%'}}/></div></div></section>
       </>}
