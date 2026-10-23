@@ -51,3 +51,39 @@
 .class-cell.incorrect{border-color:#e6a5a5;background:#fff4f3;color:#a04c4c}
 @media(max-width:650px){.class-table{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:460px}.class-cell{min-height:82px;padding:11px}.class-cell span{font-size:11px}.reveal-bubble{width:min(310px,84vw);min-height:0}.reset-round{width:100%;max-width:240px}}
 @media(max-width:380px){.class-table{grid-template-columns:1fr}.class-cell{min-height:65px}.reveal-bubble>strong{font-size:22px}}
+
+
+/* Tabela verdadeira e controles retrô anos 90, mantendo o azul-aqua do laboratório */
+.class-table-wrap{width:100%;max-height:58vh;overflow:auto;margin:20px 0;border:2px solid #8fc9e2;border-radius:4px;background:#f8fdff;box-shadow:inset 2px 2px 0 #fff,inset -2px -2px 0 #c4e5f3,4px 4px 0 #b1d8e9}
+.class-reference-table{width:100%;border-collapse:separate;border-spacing:0;text-align:left;font-size:12px;color:#315f7e}
+.class-reference-table thead{position:sticky;top:0;z-index:2}
+.class-reference-table th{padding:12px 13px;background:linear-gradient(#d9f3ff,#a9ddf5);border-right:1px solid #9bcee4;border-bottom:2px solid #83bdd7;color:#205c80;font-size:10px;letter-spacing:.5px;text-transform:uppercase;box-shadow:inset 1px 1px 0 #fff}
+.class-reference-table th:last-child{border-right:0}
+.class-reference-table td{padding:11px 13px;vertical-align:top;border-right:1px solid #d1eaf5;border-bottom:1px solid #c8e4f0;line-height:1.5}
+.class-reference-table td:last-child{border-right:0}
+.class-reference-table tbody tr:nth-child(even){background:#eaf7fc}
+.class-reference-table tbody tr:hover{background:#dff3fc}
+.class-reference-table tbody tr.row-chosen{background:#d7f0ff;outline:2px solid #5daed5;outline-offset:-2px}
+.class-reference-table tbody tr.row-correct{background:#e3f8ec}
+.class-reference-table tbody tr.row-incorrect{background:#fff0ec}
+.class-reference-table td strong{color:#245477}
+.class-reference-table .table-count{font-weight:900;text-align:center;white-space:nowrap}
+.table-select-button{padding:6px 9px;border:1px solid #77b4d0;border-radius:2px;background:linear-gradient(#fff,#d8eff9);box-shadow:inset 1px 1px 0 #fff,2px 2px 0 #a7cedf;color:#245477;font-size:10px;font-weight:900;white-space:nowrap}
+.table-select-button:hover:not(:disabled){background:linear-gradient(#fff,#bfe6f8)}
+.table-select-button:active:not(:disabled){box-shadow:inset 1px 1px 2px #7fb5ce;transform:translate(1px,1px)}
+/* Bevel clássico de software educativo dos anos 90 */
+.lab-app .aero-button,.lab-app .soft-action,.lab-app .sound-toggle,.lab-app .header-nav button,.lab-app .back-button,.lab-app .text-button,.lab-app .answer-option,.lab-app .table-select-button{
+  border-radius:3px;letter-spacing:.1px
+}
+.lab-app .aero-button{border:1px solid #fff;outline:1px solid #6eafd0;box-shadow:inset 1px 1px 0 #fff,inset -2px -2px 0 #2d83b0,3px 3px 0 #8bbfd7,4px 4px 0 #d2eaf4;background:linear-gradient(180deg,#a8e3fa 0%,#68c4ec 48%,#398fc2 49%,#5eb4dd 100%);text-shadow:1px 1px 0 #286f97;color:#fff}
+.lab-app .aero-button:before{height:25%;left:2%;right:2%;border-radius:1px;background:#ffffff5c}
+.lab-app .aero-button:hover:not(:disabled){transform:translate(-1px,-1px);box-shadow:inset 1px 1px 0 #fff,inset -2px -2px 0 #2d83b0,4px 4px 0 #8bbfd7,5px 5px 0 #d2eaf4}
+.lab-app .aero-button:active:not(:disabled){transform:translate(2px,2px);box-shadow:inset 2px 2px 2px #276b91,1px 1px 0 #8bbfd7}
+.lab-app .soft-action,.lab-app .sound-toggle{border:1px solid #fff;outline:1px solid #9bcfe4;background:linear-gradient(#fff,#d8f1fc);box-shadow:inset 1px 1px 0 #fff,inset -1px -1px 0 #b1d8e9,2px 2px 0 #a8d2e4;color:#286b91}
+.lab-app .soft-action:active,.lab-app .sound-toggle:active{transform:translate(1px,1px);box-shadow:inset 1px 1px 2px #a4cedf}
+.lab-app .header-nav button{border:1px solid transparent}
+.lab-app .header-nav button:hover,.lab-app .header-nav button.nav-active{border-color:#a3d2e5;background:linear-gradient(#fff,#d7f1fc);box-shadow:inset 1px 1px 0 #fff,2px 2px 0 #c3e3ef}
+.lab-app .answer-option{box-shadow:inset 1px 1px 0 #fff,2px 2px 0 #c6e3ef;background:linear-gradient(#fff,#f0faff)}
+.lab-app .answer-option.chosen{box-shadow:inset 1px 1px 0 #fff,2px 2px 0 #78bddc}
+.lab-app .class-reference-table th{font-family:'Nunito',sans-serif}
+@media(max-width:650px){.class-table-wrap{max-height:62vh}.class-reference-table{font-size:11px}.class-reference-table th,.class-reference-table td{padding:9px 8px}.class-reference-table th{font-size:9px}.class-reference-table td:nth-child(2){min-width:190px}.class-reference-table td:first-child{min-width:145px}}
